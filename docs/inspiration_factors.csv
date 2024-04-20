@@ -1,0 +1,106 @@
+﻿FACTORID,FACTOR,CLASS,FREQUENCY,OUTPUT,COMMENT,ACTIVE,LASTUPDATE,DESCRIPTION
+1248388832,TotalAsset,quantm.factor.asset.TotalAsset,D,FactorLibrary, ,TRUE,2023-05-26T12:09:32.467Z,Total Assets
+1722845506,AvgNetAsset,quantm.factor.asset.AvgNetAsset,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Average Net Assets
+1837023050,EffTaxRate,quantm.factor.income.EffectiveTaxRate,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Effective Tax Rate
+1960694247,PreTaxROA,quantm.factor.roa.PreTaxROA,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,PreTaxROA
+1627207036,PostTaxROA,quantm.factor.roa.PostTaxROA,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,PostTaxROA
+1190087461,GCFO,quantm.factor.freecashflow.GCFO,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,GCFO
+1348787833,TotalDebt,quantm.factor.debt.TotalDebt,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,TotalDebt
+1683802715,TotDep,quantm.factor.value.TotalDeposits,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,TotDep
+639529638,APIC,quantm.factor.capital.AdditionalPaidInCapital,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Additional Paid In Capital
+2038020469,NOPAT,quantm.factor.profitability.NOPAT,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,NOPAT
+420813937,TotalValue,quantm.factor.macro.TotalValue,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,TotalValue
+2061222729,ValAst,quantm.factor.macro.ValueAsset,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,ValAst
+748425756,StckComp,quantm.factor.revenue.StockBasedCompensation,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,StckComp
+769862718,DepAmrtz,quantm.factor.macro.DepreciationAmortization,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,DepAmrtz
+1641204774,InsResTot,quantm.factor.insurance.InsuranceReservesTotal,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,InsResTot
+689897576,IntRate,quantm.factor.interest.InterestRate,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,IntRate
+1060412231,GDPDeflator,quantm.factor.macro.GDPDeflator,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,GDPDeflator
+279972420,NomGDP,quantm.factor.macro.NominalGDP,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,NomGDP
+1666040143,DefRevLT,quantm.factor.revenue.DeferredRevenueLT,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,DefRevLT
+1906996497,CFO12M,quantm.factor.freecashflow.CFO12M,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,CFO12M
+616754602,DefRevCL,quantm.factor.revenue.DeferredRevenueCurrentLiabilities,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,DefRevCL
+1268721243,IntExp,quantm.factor.expense.InterestExpense,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,IntExp
+282562974,DepositInsPrem,quantm.factor.insurance.DepositInsurancePremium,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,DepositInsPrem
+2123400614,Dividends,quantm.factor.dividend.Dividends,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Dividends
+1625464059,GrIntExp,quantm.factor.expense.GrossInterestExpense,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,GrIntExp
+274720589,MinrIntDiv,quantm.factor.dividend.MinorityInterestDividends,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,MinrIntDiv
+252172985,StckPur,quantm.factor.value.StockPurchases,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,StckPur
+1420531528,AG_MM_5Y,quantm.factor.assetgrowth.MillerModiglianiAssetGrowth5Yr,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,AG_MM_5Y
+1338614896,NetAsset,quantm.factor.asset.NetAsset,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,NetAsset
+249464039,SI,quantm.factor.shortinterest.ShortInterest,D,FactorLibrary,Source - Data Explorers. The ratio of shares sold short to total shares outstanding,TRUE,2023-05-26T12:09:32.467Z,Short Interest
+1497140809,TrxAnlstSntmnt,quantm.factor.nlp.TranscriptAnalystSentiment,D,FactorLibrary,Source - S&P Transcripts. Analyst question section sentiment score from earnings calls (higher = more positive),TRUE,2023-05-26T12:09:32.467Z,Transcript Analyst Sentiment
+474539921,TrxExecSntmnt,quantm.factor.nlp.TranscriptExecutiveSentiment,D,FactorLibrary,Source - S&P Transcripts. Executive presentation section sentiment score from earnings calls (higher = more positive),TRUE,2023-05-26T12:09:32.467Z,Transcript Executive Sentiment
+1025085233,CrwdNetScore,quantm.factor.score.CrowdingNetScore,D,FactorLibrary,Source - JPM Prime Brokerage. Calculated from position data (long rank decile bucket - short rank decile bucket) where -100 is max short and 100 is max long and 0 is neutral,TRUE,2023-05-26T12:09:32.467Z,Crowding Net Score
+89280850,CCSpendYoY,quantm.factor.altsignals.CreditCardSpendYoY,D,FactorLibrary,Source - Consumer Edge. YoY pct change of 4-week rolling average of credit card spending,FALSE,2023-10-20T16:30:28.577Z,Credit Card Spend YoY
+434447920,CCTransYoY,quantm.factor.altsignals.CreditCardTransactionsYoY,D,FactorLibrary,Source - Consumer Edge. YoY pct change of 4-week rolling average of credit card transaction count,FALSE,2023-10-20T16:30:28.577Z,Credit Card Trans YoY
+74977683,IncROIC,quantm.factor.roic.Incremental_ROIC,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,IncROIC
+1477876524,SG,quantm.factor.stablegrowth.SalesGrowth  ,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Sales Growth
+916720799,EG,quantm.factor.stablegrowth.EarningsGrowth  ,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Earnings Growth
+1366183760,CFSurprise,quantm.factor.surprise.CashFlowSurprise  ,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Cash Flow Surprise
+1465951271,ESurprise,quantm.factor.surprise.EarningsSurprise,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,ESurprise
+1509278460,FCFA,quantm.factor.freecashflow.FCFA,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,FCFA
+932378736,EP,quantm.factor.earnings.EP,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,EP
+1806353328,RnDP,quantm.factor.rnd.RnDP,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,RnDP
+1915300920,SalesEV,quantm.factor.sales.SalesToEV,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,SalesEV
+116933471,E_Diff,quantm.factor.diffusion.EarningsDiffusion,D,FactorLibrary,"Earnings Estimate diffusion is the number of up changes minus the number of down revisions scaled by the total number of estimates for FY1, FY2 and FY3 earnings",TRUE,,Earnings Diffusion
+1051775199,TDTA,quantm.factor.leverage.DebtToAsset,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Debt To Asset
+998517599,ROA,quantm.factor.roa.ROA,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,ROA
+1004165578,ROE,quantm.factor.roe.ROE,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,ROE
+899393094,ROIC,quantm.factor.roic.ROIC,D,FactorLibrary,Return on Invested Capital,TRUE,2023-05-26T12:09:32.467Z,ROIC
+1340583409,CFG,quantm.factor.stablegrowth.CashFlowGrowth  ,D,FactorLibrary,"Cash Flow Growth. The value is in decimal percent, meaning that if the CFG is 1.20, it represents a 120% increase in cash flow.",TRUE,2023-05-26T12:09:32.467Z,CFG
+1249864858,FEP,quantm.factor.earnings.ForecastEarningsToPrice,D,FactorLibrary,ForecastEarnings To Price,TRUE,2023-05-26T12:09:32.467Z,FEP
+40473428,FCFP,quantm.factor.freecashflow.FCFP,D,FactorLibrary,Free Cash Flow To Price,TRUE,2023-05-26T12:09:32.467Z,FCFP
+1389697758,SalesYoYGrw,quantm.factor.sales.SalesYoYGrowth ,D,FactorLibrary,"Sales Growth Year On Year.The value is in decimal percent, meaning that if the SalesYoYGrw is 1.20, it represents a 120% increase in sales.",TRUE,2023-05-26T12:09:32.467Z,SalesYoYGrw
+668935599,EGYoY,quantm.factor.earnings.EarningsGrowthYoY  ,D,FactorLibrary,"Earnings Growth Year On Year. LTM percent change of Net income before extraordinary items. The value is in decimal percent, meaning that if the EGYoY is 1.20, it represents a 120% increase in earnings.",TRUE,2023-05-26T12:09:32.467Z,EGYoY
+1581934299,SSurprise,quantm.factor.surprise.SalesSurprise  ,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,Sales Surprise
+1384056082,RnDS,quantm.factor.rnd.RnDS,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,RnDS
+997225388,RnDA,quantm.factor.rnd.RnDA,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,RnDA
+516039158,RnDInv,quantm.factor.rnd.RnDInv,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,RnDInv
+787231078,TBP,quantm.factor.book.TangibleBookToPrice,D,FactorLibrary,,TRUE,2023-05-26T12:09:32.467Z,TBP
+392325789,InvSGAAst,quantm.factor.sga.InvestmentSGAAsset,D,FactorLibrary,Investment SG&A to Asset for non-financial companies,FALSE,2023-10-19T15:47:19.96Z,Investment SGA Asset
+202897104,RnDG,quantm.factor.stablegrowth.RnDGrowth,D,FactorLibrary,RnD Growth,TRUE,,RnD Growth
+1154465675,RnDConversion,quantm.factor.rnd.RnDConversion,D,FactorLibrary,"Research & Development Conversion, defined as if a company is RnDConverter in any lag in a range",FALSE,,RnD Conversion
+1126768024,E_Rev,quantm.factor.revision.EarningsRevision,D,FactorLibrary,"Earnings revision is the 4 month change in FY1, FY2 and FY3 earnings estimates scaled by price",TRUE,2023-11-03T13:19:26.687Z,Earnings Revision
+2066876707,OS,quantm.factor.skew.OptionSkew,D,FactorLibrary,Option Skew,TRUE,2023-11-03T13:19:26.687Z,Option Skew
+643730599,EV,quantm.factor.earnings.EnterpriseValue,D,FactorLibrary,Enterprise Value,TRUE,2023-11-03T13:19:26.687Z,Enterprise Value
+2096590642,CashEP,quantm.factor.earnings.CashEarningsToPrice,D,FactorLibrary,CashEarnings To Price,TRUE,2023-11-03T13:19:26.687Z,CashEarnings To Price
+1478963528,COA,quantm.factor.accrual.COA,D,FactorLibrary,Current Operating Accruals,TRUE,2023-11-03T13:19:26.687Z,Current Operating Accruals
+1394297164,EBITDAEV,quantm.factor.earnings.EBITDAEV,D,FactorLibrary,EBITDA To EnterpriseValue,TRUE,2023-11-03T13:19:26.687Z,EBITDA To EnterpriseValue
+2052030101,EBITDAEVFin,quantm.factor.earnings.EBITDAEVFin,D,FactorLibrary,EBITDA To EnterpriseValue Financials,TRUE,2023-11-03T13:19:26.687Z,EBITDA To EnterpriseValue Financials
+2117114948,PM12xOMR,quantm.factor.momentum.PriceMomentum12ExOMR,D,FactorLibrary,Price Momentum ex One Month Return 12 months,TRUE,2023-11-03T13:19:26.687Z,Price Momentum ex One Month Return 12 months
+2132775875,NEI,quantm.factor.nei.NEI,D,FactorLibrary,Net Equity Issuance,TRUE,,Net Equity Issuance
+1493652248,Beta,quantm.factor.beta.Beta,D,FactorLibrary,5-year Beta estimated from weekly observations with equal weights,TRUE,,Beta
+220408895,BetaVol,quantm.factor.volatility.BetaVolatility,D,FactorLibrary,Volatility of Beta,TRUE,,Volatility of Beta
+1059777254,ROICxRnD,quantm.factor.roic.ROICxRnD,D,FactorLibrary,Return on Invested Capital without RnD,TRUE,2023-12-04T15:46:58.24Z,ROICxRnD
+1535632317,FwdCitnPageRank,quantm.factor.patent.ForwardCitationPageRank,D,FactorLibrary_PageRank,Google Page Rank,FALSE,2023-12-09T03:30:22.43Z,ForwardCitationPageRank
+2094720981,DP,quantm.factor.dividend.DividendYield,D,FactorLibrary,Dividends Common(Ordinary) divided by Marketcap,TRUE,2024-01-03T13:34:42.818Z,Dividends To Price
+180187775,CEOApproval,quantm.factor.websignals.CEOApproval,D,FactorLibrary,"Average employee approval of the CEO on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T14:53:16.771Z,CEO Approvals
+2072023356,CareerOps,quantm.factor.websignals.CareerOps,D,FactorLibrary,"Average employee satisfaction with career growth opportunities on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T21:57:09.241Z,Career Opportunities
+1578265463,CompBenefits,quantm.factor.websignals.CompBenefits,D,FactorLibrary,"Average employee satisfaction with compensation and benefits on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T22:19:32.622Z,Compensation Benefits
+1394993952,Outlook,quantm.factor.websignals.Outlook,D,FactorLibrary,"Average employee sentiment about the company's future on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T22:20:43.731Z,Outlook
+1191816759,OverallRating,quantm.factor.websignals.OverallRating,D,FactorLibrary,"Average overall rating based on employee reviews on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T22:21:50.602Z,Overall Ratings
+535526680,Recommends,quantm.factor.websignals.Recommends,D,FactorLibrary,"Average percentage of employees who would recommend the company on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T22:23:24.654Z,Recommendation
+538089527,SnrMgmt,quantm.factor.websignals.SeniorManagement,D,FactorLibrary,"Average employee rating of senior leadership on Glassdoor (EWM: half-life = 180 days, total duration = 18 months)",FALSE,2024-01-21T22:25:34.984Z,Senior Management
+932732701,Review12M,quantm.factor.websignals.Review12M,D,FactorLibrary,Number of Glassdoor reviews (total duration = 12 months),FALSE,2024-01-21T22:26:58.993Z,Review 12M
+137289891,ForwardCitationPageRankAvg,quantm.factor.patent.ForwardCitationPageRankAvg,D,FactorLibrary_PageRank,PageRankAvg,FALSE,2024-02-01T11:48:32.586Z,PageRankAvg
+280442390,ForwardCitationPageRankTop5pctCount,quantm.factor.patent.ForwardCitationPageRankTop5pctCount,D,FactorLibrary_PageRank,PageRankTop5pctCount,FALSE,2024-02-01T12:08:51.518Z,PageRankTop5pctCount
+1755897417,ForwardCitationPageRankTop5pctAvg,quantm.factor.patent.ForwardCitationPageRankTop5pctAvg,D,FactorLibrary_PageRank,PageRankTop5pctAvg,FALSE,2024-02-01T12:10:49.019Z,PageRankTop5pctAvg
+2066802324,MktCapMMCmpyUSD,quantm.factor.size.MktCapMMCmpyUSD,D,FactorLibrary,Market Capitalization (Company) in USD (in millions) - Source is Bloomberg for daily and DataStream for historical,TRUE,2024-02-25T15:15:08.641Z,Market Capitalization (Company) in USD (in millions)
+1569933474,LastPrice,quantm.factor.size.LastPrice,D,FactorLibrary,Last Price (as of the Price Date),TRUE,2024-02-26T12:15:06.725Z,Last Price
+952275759,SharesOutCmpy,quantm.factor.size.SharesOutCmpy,D,FactorLibrary,Shares Outstanding (Company),TRUE,2024-02-26T12:44:33.201Z,Shares Outstanding (Company)
+145505946,PageRankTop5pctAvgFullUniv,quantm.factor.patent.ForwardCitationPageRankTop5pctAvgFullUniv,D,FactorLibrary_PageRank,Google Page Rank average of top 5% patents,FALSE,2024-02-26T14:20:38.226Z,Google Page Rank average of top 5% patents
+1674120442,PageRankTop5pctCountFullUniv,quantm.factor.patent.ForwardCitationPageRankTop5pctCountFullUniv,D,FactorLibrary_PageRank,Google Page Rank count of top 5% patents,FALSE,2024-02-26T14:22:51.133Z,Google Page Rank count of top 5% patents
+775472693,PageRankAvgFullUniv,quantm.factor.patent.ForwardCitationPageRankAvgFullUniv,D,FactorLibrary_PageRank,Google Page Rank average per company,FALSE,2024-02-26T14:24:50.025Z,Google Page Rank average per company
+619932160,BRDSntmnt,quantm.factor.nlp.ChineseBrokerResearchDisclosuresSentiment,D,FactorLibrary,"Broker Onsite Research (BRD) sentiment value, raw score calculated as the average of 6 month sentiment score. (number of pos. sentences – number of neg. sentences) / (Number of neutral sentences + 1)",FALSE,2024-03-04T17:20:09.315Z,BRD Sentiment
+1642307379,ECMCmplxtyYoY,quantm.factor.nlp.ChineseEarningCallMeetingsComplexityYoY,D,FactorLibrary,Earnings Call Meeting (ECM) Complexity YoY Change,FALSE,2024-03-04T17:22:13.738Z,ECM Complexity YoY Change
+1615568612,ECMSntmnt,quantm.factor.nlp.ChineseEarningCallMeetingsSentiment,D,FactorLibrary,"Earnings Call Meeting (ECM) Sentiment value, raw score calculated as the last value of 12M sentiment. (number of pos. sentences – number of neg. sentences) / (Number of neutral sentences + 1)",FALSE,2024-03-04T17:24:17.599Z,ECM Sentiment
+1940837825,ECMSntmntYoY,quantm.factor.nlp.ChineseEarningCallMeetingsSentimentYoY,D,FactorLibrary,Earnings Call Meeting (ECM) Sentiment YoY Change,FALSE,2024-03-04T17:26:06.971Z,ECM Sentiment YoY Change
+439094023,BRDCmplxty,quantm.factor.nlp.ChineseBrokerResearchDisclosuresComplexity,D,FactorLibrary,"Broker Onsite Research (BRD) complexity (Average number of characters per sentence) value, raw score calculated as the average of 6 month complexity score",FALSE,2024-03-04T17:28:26.457Z,BRD Complexity
+1546794491,ECMCmplxty,quantm.factor.nlp.ChineseEarningCallMeetingsComplexity,D,FactorLibrary,"Earnings Call Meeting (ECM) Complexity (Average number of characters per sentence) value, raw score calculated as the last value of 12M complexity",FALSE,2024-03-04T17:34:08.64Z,ECM Complexity
+918749739,BP,quantm.factor.book.BookToPrice,D,FactorLibrary,Book To Price,TRUE,2024-03-28T06:25:35.568Z,Book To Price
+1557497472,SP,quantm.factor.sales.SalesToPrice,D,FactorLibrary,Sales To Price,TRUE,2024-03-28T06:27:48.373Z,Sales To Price
+304532305,LastPriceUSD,quantm.factor.size.LastPriceUSD,D,FactorLibrary,Last Price in USD,TRUE,2024-03-29T08:06:20.102Z,Last Price in USD
+491370933,TotalLiabilities,quantm.factor.asset.TotalLiabilities,D,FactorLibrary,Total Liabilities,TRUE,2024-04-07T08:04:12.517Z,Total Liabilities
+877077816,MinrInt,quantm.factor.macro.MinorityInterest,D,FactorLibrary,Minority Interest,TRUE,2024-04-07T09:00:03.951Z,MinorityInterest
+473420932,PrefStck,quantm.factor.macro.PreferredStock,D,FactorLibrary,Preferred Stock,TRUE,2024-04-10T05:01:02.6Z,Preferred Stock
