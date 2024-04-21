@@ -1,0 +1,28 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "prompt": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "answer": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "period": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "label": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "symbol": {
+      "dtype": "null",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}
