@@ -29,10 +29,41 @@ import finnhub
 import datasets
 import pandas as pd
 import yfinance as yf
+
 from datetime import date, datetime, timedelta
 from collections import defaultdict
 from datasets import Dataset
 from openai import OpenAI
+
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# from datasets import load_from_disk
+from peft import PeftModel
+from utils import *
+
+
+
+B_INST, E_INST = "[INST]", "[/INST]"
+B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+
+
+SYSTEM_PROMPT = "You are a seasoned stock market analyst. Your task is to list the positive developments and potential concerns for companies based on relevant news and basic financials from the past weeks, then provide an analysis and prediction for the companies' stock price movement for the upcoming week. " \
+    "Your answer format should be as follows:\n\n[Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...\n\n[Prediction & Analysis]:\n...\n"
+
+START_DATE = "2024-01-31"
+END_DATE = "2024-04-10"
+
+DATA_DIR = f"./{START_DATE}_{END_DATE}"
+os.makedirs(DATA_DIR, exist_ok=True)
+
+finnhub_client = finnhub.Client(api_key="coi23a9r01qpcmnipei0coi23a9r01qpcmnipeig")
+
+client = OpenAI(api_key = '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')
+
+os.environ['CUDA_VISIBLE_DEVICES'] = "5,6"
+
+
 
 
 def bin_mapping(ret):
@@ -283,9 +314,10 @@ def query_gpt4(model, symbol_list, min_past_weeks=1, max_past_weeks=3, with_basi
             pre_done = len(df)
 
         prompts = get_all_prompts(symbol, min_past_weeks, max_past_weeks, with_basics)
+        # prompts = get_all_prompts_online(symbol_list, data, curday, with_basics)
 
         for i, prompt in enumerate(prompts):
-            
+
             if i < pre_done:
                 continue
 
@@ -495,22 +527,29 @@ def get_all_prompts_online(symbol, data, curday, with_basics=True):
     return info, prompt
 
 
+def test_demo(model, tokenizer, prompt):
+
+    inputs = tokenizer(
+        prompt, return_tensors='pt',
+        padding=False, max_length=4096
+    )
+    inputs = {key: value.to(model.device) for key, value in inputs.items()}
+        
+    res = model.generate(
+        **inputs, max_length=4096, do_sample=True,
+        eos_token_id=tokenizer.eos_token_id,
+        use_cache=True
+    )
+    output = tokenizer.decode(res[0], skip_special_tokens=True)
+    return output
+
+
 
 if __name__ == "__main__":
 
-    START_DATE = "2024-01-31"
-    END_DATE = "2024-04-10"
 
-    DATA_DIR = f"./{START_DATE}_{END_DATE}"
-    os.makedirs(DATA_DIR, exist_ok=True)
-
-    finnhub_client = finnhub.Client(api_key="coi23a9r01qpcmnipei0coi23a9r01qpcmnipeig")
-
-    client = OpenAI(api_key = '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')
-
-    
     ticker = "SNOW"
-    n_weeks = 10
+    n_weeks = 4
     curday = get_curday()
     steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
 
@@ -525,19 +564,50 @@ if __name__ == "__main__":
 
     print(prompt)
 
+    ######## Running prompt
+
+    base_model = AutoModelForCausalLM.from_pretrained(
+        'meta-llama/Llama-2-7b-chat-hf',
+        trust_remote_code=True,
+        device_map="auto",
+        torch_dtype=torch.float16,   
+        )
+    base_model.model_parellal = True
+
+    model = PeftModel.from_pretrained(base_model, 'FinGPT/fingpt-forecaster_dow30_llama2-7b_lora')
+    model = model.eval()
+    tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-chat-hf')
+    tokenizer.padding_side = "right"
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+    
+    test_dataset = [prompt]
+
+    answers = []
+
+    for i in range(len(test_dataset)):
+        prompt = test_dataset[i]
+        output = test_demo(model, tokenizer, prompt)
+        answer = re.sub(r'.*\[/INST\]\s*', '', output, flags=re.DOTALL)
+        # gt = test_dataset[i]['answer']
+        print('\n------- Prompt ------\n')
+        print(prompt)
+        print('\n------- LLaMA2 Finetuned ------\n')
+        print(answer)
+        # print('\n------- GPT4 Groundtruth ------\n')
+        # print(gt)
+        print('\n===============\n')
+        answers.append(answer)
+        # gts.append(gt)
+
+
+
+    # tickers = [ticker]
+    # query_gpt4(model="gpt-4-turbo", symbol_list=tickers, min_past_weeks=1, max_past_weeks=3, with_basics=True)
+
     # DOW_30 = ["SNOW"]
 
     # for symbol in DOW_30:
     #     prepare_data_for_company(symbol)
-
-    # B_INST, E_INST = "[INST]", "[/INST]"
-    # B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
-
-
-    # SYSTEM_PROMPT = "You are a seasoned stock market analyst. Your task is to list the positive developments and potential concerns for companies based on relevant news and basic financials from the past weeks, then provide an analysis and prediction for the companies' stock price movement for the upcoming week. " \
-    #     "Your answer format should be as follows:\n\n[Positive Developments]:\n1. ...\n\n[Potential Concerns]:\n1. ...\n\n[Prediction & Analysis]:\n...\n"
-
-    # print(SYSTEM_PROMPT)
 
     # prompts = get_all_prompts("AAPL", 1, 3)
     # prompts = get_all_prompts("MSFT", 1, 3, False)
