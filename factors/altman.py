@@ -44,6 +44,8 @@ from typing import Dict, List, Union
 import vertexai
 from vertexai.preview.generative_models import GenerativeModel, Image
 
+from anthropic import AnthropicVertex
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -672,7 +674,6 @@ def split_prompt(prompt, max_length):
 if __name__ == "__main__":
 
     prompt = prompt_cache(ticker='SBUX', n_weeks=1)
-    print(len(prompt))
 
     # prompt = "What is a stock?"
     
@@ -714,19 +715,16 @@ if __name__ == "__main__":
                 Most factors should be inferred from company related news. Then make your prediction of the SBUX stock 
                 price movement for next week (2024-05-04 to 2024-05-11). Provide a summary analysis to support your prediction.
         """
-    print(len(inputs1))
 
-
-
-    instances = {
-        "inputs": inputs1,
-        "parameters": {
-            "max_new_tokens":512,
-            "top_p":0.9,
-            "temperature":0.3
-            }
-        }
-
+    # Llama 2 7B deployed from Hugging Face to Vertex AI endpoint
+    # instances = {
+    #     "inputs": inputs1,
+    #     "parameters": {
+    #         "max_new_tokens":512,
+    #         "top_p":0.9,
+    #         "temperature":0.3
+    #         }
+    #     }
     # predict_custom_trained_model_sample(
     #     project="197636990935",
     #     endpoint_id="3886296416141705216",
@@ -734,25 +732,36 @@ if __name__ == "__main__":
     #     instances=instances
     # )
 
-    PROJECT_ID = "197636990935"
-    REGION = "us-central1"
-    vertexai.init(project=PROJECT_ID, location=REGION)
+    # Gemini 1.0 pro model (no model deployment needed, just projectID)
+    # PROJECT_ID = "197636990935"
+    # REGION = "us-central1"
+    # vertexai.init(project=PROJECT_ID, location=REGION)
+    # gemini_pro_model = GenerativeModel("gemini-1.0-pro")
+    # model_response = gemini_pro_model.generate_content(prompt)
+    # print("Gemini 1.0 pro response:\n",model_response)
 
-    gemini_pro_model = GenerativeModel("gemini-1.0-pro")
-    model_response = gemini_pro_model.generate_content(prompt)
-    print("Gemini 1.0 pro response:\n",model_response)
+    # Claude 3 Sonnet model
+    LOCATION="us-central1"
+    client = AnthropicVertex(region=LOCATION, project_id="fingpt-422201")
+    message = client.messages.create(
+        max_tokens=1024,
+        messages=[
+            {
+            "role": SYSTEM_PROMPT,
+            "content": prompt,
+            }
+        ],
+        model="claude-3-sonnet@20240229",
+    )
+    print(message.model_dump_json(indent=2))
 
-    # Example usage
+
+    # Example usage of chunk splitting into 1646 characters
     # chunks = split_prompt(prompt, 1646)
-
     # # Print the chunks
     # for chunk in chunks:
     #     print(chunk)
     #     print("\n\n---------------------------------------------------\n\n")
 
-
-
-
-
-    ####### Running model and prompt
+    # HF token
     #token='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'
