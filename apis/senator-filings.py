@@ -6,7 +6,7 @@ import pickle
 import requests
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, List, Optional
 
 
@@ -68,23 +68,25 @@ def _csrf(client: requests.Session) -> str:
     return csrftoken
 
 
-def senator_reports(client: requests.Session) -> List[List[str]]:
+def senator_reports(client: requests.Session, date_from) -> List[List[str]]:
     """ Return all results from the periodic transaction reports API. """
     token = _csrf(client)
     idx = 0
-    reports = reports_api(client, idx, token)
+    reports = reports_api(client, idx, token, date_from)
     all_reports: List[List[str]] = []
     while len(reports) != 0:
         all_reports.extend(reports)
         idx += BATCH_SIZE
-        reports = reports_api(client, idx, token)
+        reports = reports_api(client, idx, token, date_from)
     return all_reports
 
 
+#'01/01/2024 00:00:00' in end_date for creating pickle with 'outdated' data
 def reports_api(
     client: requests.Session,
     offset: int,
-    token: str
+    token: str,
+    date_from: str
 ) -> List[List[str]]:
     """ Query the periodic transaction reports API. """
     login_data = {
@@ -92,8 +94,8 @@ def reports_api(
         'length': str(BATCH_SIZE),
         'report_types': '[11]',
         'filer_types': '[]',
-        'submitted_start_date': '03/03/2024 00:00:00', #'01/01/2012 00:00:00'
-        'submitted_end_date': '',
+        'submitted_start_date': date_from,
+        'submitted_end_date': '', 
         'candidate_state': '',
         'senator_state': '',
         'office_id': '',
@@ -102,10 +104,22 @@ def reports_api(
         'csrfmiddlewaretoken': token
     }
     LOGGER.info('Getting rows starting at {}'.format(offset))
-    response = client.post(REPORTS_URL,
-                           data=login_data,
-                           headers={'Referer': SEARCH_PAGE_URL})
-    return response.json()['data']
+    # response = client.post(REPORTS_URL,
+    #                        data=login_data,
+    #                        headers={'Referer': SEARCH_PAGE_URL})
+    # return response.json()['data']
+    for _ in range(3):  # Retry up to 3 times
+        try:
+            response = client.post(REPORTS_URL,
+                                   data=login_data,
+                                   headers={'Referer': SEARCH_PAGE_URL})
+            return response.json()['data']
+        except Exception as e:
+            LOGGER.error(f"Error occurred: {e}. Retrying in 5 seconds...")
+            # LOGGER.error(f"{response.text}")
+            time.sleep(5)  # Wait for 5 seconds before retrying
+
+    raise Exception("Failed to get data from API after 3 attempts")
 
 
 def _tbody_from_link(client: requests.Session, link: str) -> Optional[Any]:
@@ -162,62 +176,108 @@ def txs_for_report(client: requests.Session, row: List[str]) -> pd.DataFrame:
     return pd.DataFrame(stocks).rename(
         columns=dict(enumerate(REPORT_COL_NAMES)))
 
-def update_database():
-    """
-    Will check if '{DATABASE_DIR}/senators.pickle' exists, if it does it will access it and check the latest date.
-    If the latest date is not the latest available, it will update the pickle file.
-    If the file does not exist, it will create it.
-    """
-
-    if os.path.exists(f"{DATABASE_DIR}/senators.pickle"):
-        with open(f"{DATABASE_DIR}/senators.pickle", 'rb') as f:
+def get_raw_senators_tx(pickle_dir = str):
+    if os.path.exists(pickle_dir):
+        LOGGER.info(f"Pickle directory exists: {pickle_dir}")
+        with open(pickle_dir, 'rb') as f:
             senator_txs_old = pickle.load(f)
-        # Compare max date in picke file with today's date
-        if senator_txs_old['tx_date'].max() < datetime.today():
-            # TODO: Update the pickle file with the new transactions
-            print("Updating pickle file")
-            pass
-        else:
-            print("No need to update pickle file, up-to-date.")
-            pass
+        updated_senators = update_database(pickle_dir, senator_txs_old)
+        return updated_senators
     else:
-        with open(f"{DATABASE_DIR}/senators.pickle", 'wb') as f:
-                    pickle.dump(senator_txs, f)
+        updated_senators = main()
+        return updated_senators
+
+def update_database(pickle_dir, senator_txs_old):
+    """
+    Access '{DATABASE_DIR}/senators.pickle' and get the latest date.
+    If the latest date is not the latest available, it will update the data.
+    """
+    # Convert tx_date column to datetime
+    senator_txs_old['file_date'] = pd.to_datetime(senator_txs_old['file_date'], format='%m/%d/%Y', errors='coerce')
+
+    # nat_values = senator_txs_old['file_date'].isna()
+    # if nat_values.any():
+    #     print("Found NaT values in the tx_date column:")
+    #     print(senator_txs_old[nat_values])
+
+    latest_date = senator_txs_old['file_date'].max()
+    days_padding = 5
+
+    # Compare max date in picke file with today's date
+    LOGGER.info(f"Today's date: {datetime.today()}")
+    LOGGER.info(f"Latest date in pickle file: {str(latest_date)}")
+
+    # Convert back to string date
+    senator_txs_old['file_date'] = senator_txs_old['file_date'].dt.strftime('%m/%d/%Y')
+
+    if (latest_date + timedelta(days=days_padding)) < datetime.today():
+        # TODO: Update the pickle file with the new transactions
+        LOGGER.info("Updating pickle file")
+        updated_database = main(pickle_dir=pickle_dir, date_from=latest_date, senator_txs_old=senator_txs_old)
+        return updated_database
+    else:
+        LOGGER.info("No need to update pickle file, up-to-date.")
+        return senator_txs_old
 
 
-def main() -> pd.DataFrame:
+def main(pickle_dir=f"{DATABASE_DIR}/senators.pickle",
+         csv_dir=f"{DATABASE_DIR}/senators.csv", 
+         date_from='11/01/2023 00:00:00', 
+         senator_txs_old=pd.DataFrame()) -> pd.DataFrame:
+    """
+        Full run from date_from to present
+        Checks all reports and saves/updates the database
+        in pickle_dir, both in pickle and csv format
 
-    # Cached data stored in DATABASE_DIR
-    # LOGGER.info('Looking for pickle file')
-    # update_database()
+        'senator_txs_old' parameter allows dynamic updating of database
+    """
 
-
-    # Full run from 01/31/2014 to present
     LOGGER.info('Initializing client')
     client = requests.Session()
     client.get = add_rate_limit(client.get)
     client.post = add_rate_limit(client.post)
-    reports = senator_reports(client)
-    all_txs = pd.DataFrame()
+    reports = senator_reports(client, date_from=date_from)
+    all_txs = senator_txs_old
     for i, row in enumerate(reports):
         if i % 10 == 0:
             LOGGER.info('Fetching report #{}'.format(i))
             LOGGER.info('{} transactions total'.format(len(all_txs)))
         txs = txs_for_report(client, row)
         all_txs = all_txs._append(txs)
-    return all_txs
+
+    if all_txs.equals(senator_txs_old):
+        LOGGER.info('No new transactions found')
+        return all_txs
+    else:
+        LOGGER.info('New transactions found')
+        LOGGER.info('Dumping to .pickle and csv')
+        with open(pickle_dir, 'wb') as f:
+            pickle.dump(all_txs, f)
+        LOGGER.info('Uploaded new pickle!')
+        # Also dump in same directory as csv
+        all_txs.to_csv(csv_dir)
+        LOGGER.info('Uploaded new csv!')
+        return all_txs
+
+
 
 
 if __name__ == '__main__':
     log_format = '[%(asctime)s %(levelname)s] %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
 
-    # Get latest transactions from 01/31/2014 to present
-    senator_txs = main()
-    LOGGER.info('Dumping to .pickle')
-    with open(f"{DATABASE_DIR}/senators.pickle", 'wb') as f:
-        pickle.dump(senator_txs, f)
+    # Use stored database
+    pickle_dir = f"{DATABASE_DIR}/senators.pickle"
+    senators_txs = get_raw_senators_tx(pickle_dir)
+    # with open(pickle_dir, 'rb') as f:
+    #     senators_txs = pickle.load(f)
 
-    # Also dump in same directory as csv
-    senator_txs.to_csv(f"{DATABASE_DIR}/senators.csv")
+    # Print information about senators_txs df
+    LOGGER.info(str(senators_txs.info()))
+    LOGGER.info(str(senators_txs.head()))
+    LOGGER.info(str(senators_txs.tail()))
+    
+    # print all rows of senators_txs with LOGGER
+    # for index, row in senators_txs.iterrows():
+    #     LOGGER.info(row)
 
