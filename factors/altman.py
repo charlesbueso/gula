@@ -64,6 +64,8 @@ END_DATE = "2024-04-10"
 DATA_DIR = f"./{START_DATE}_{END_DATE}"
 os.makedirs(DATA_DIR, exist_ok=True)
 
+DATABASE_DIR = r"C:\\Users\\papia\\OneDrive\\Databases\\FinGPTPrompts"
+
 finnhub_client = finnhub.Client(api_key="coi23a9r01qpcmnipei0coi23a9r01qpcmnipeig")
 
 client = OpenAI(api_key = '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')
@@ -581,6 +583,7 @@ def predict_custom_trained_model_sample(
     endpoint = client.endpoint_path(
         project=project, location=location, endpoint=endpoint_id
     )
+    print(instances)
     response = client.predict(
         endpoint=endpoint, instances=instances, parameters=parameters
     )
@@ -592,14 +595,72 @@ def predict_custom_trained_model_sample(
     #     print(" prediction:", dict(prediction))
     print(predictions)
 
+def save_prompt(ticker, prompt, weeks):
+
+    # Define the ticker directory
+    ticker_dir = os.path.join(DATABASE_DIR, ticker)
+
+    # Create the ticker directory if it doesn't exist
+    os.makedirs(ticker_dir, exist_ok=True)
+
+    # Get the current date and format it as a string
+    datestamp = datetime.now().strftime("%Y%m%d")
+
+    # Define the datestamp directory
+    datestamp_dir = os.path.join(ticker_dir, datestamp)
+
+    # Create the datestamp directory
+    os.makedirs(datestamp_dir, exist_ok=True)
+
+    # Define the file path
+    file_path = os.path.join(datestamp_dir, f"{str(weeks)}_prompt.txt")
+
+    # Write the prompt to the file (delete file if it already exists)
+    with open(file_path, "w") as file:
+        file.write(prompt)
+
+def prompt_cache(ticker, n_weeks):
+
+    # Create filepath
+    ticker_dir = os.path.join(DATABASE_DIR, ticker)
+    datestamp = datetime.now().strftime("%Y%m%d")
+    datestamp_dir = os.path.join(ticker_dir, datestamp)
+    file_path = os.path.join(datestamp_dir, f"{str(n_weeks)}_prompt.txt")
+
+    # Use existing prompt if it exists
+    if os.path.exists(file_path):
+        with open(file_path, "r") as file:
+            prompt = file.read()
+            return prompt
+        
+    else:
+        curday = get_curday()
+        steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
+
+        data = get_stock_data(ticker, steps)
+
+        data = get_news(ticker, data)
+
+        data['Basics'] = [json.dumps({})] * len(data)
+        # data = get_basics(ticker, data, always=True)
+
+        info, prompt = get_all_prompts_online(ticker, data, curday, True)
+
+        print(prompt)
+        save_prompt(ticker=ticker, prompt=prompt, weeks=n_weeks)
+        return prompt
+
 
 
 if __name__ == "__main__":
 
+    prompt = prompt_cache(ticker='SBUX', n_weeks=4)
+    print(prompt)
+
     ######## Creating prompt
 
-    # ticker = "SNOW"
-    # n_weeks = 4
+    # ticker = "SBUX"
+    # n_weeks = 1
     # curday = get_curday()
     # steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
 
@@ -613,26 +674,27 @@ if __name__ == "__main__":
     # info, prompt = get_all_prompts_online(ticker, data, curday, True)
 
     # print(prompt)
+    # save_prompt(ticker=ticker, prompt=prompt, weeks=n_weeks)
 
-    prompt = "What is a stock?"
+    # prompt = "What is a stock?"
     
     inputs = f"<s>[INST] <<SYS>> {SYSTEM_PROMPT} <</SYS>> {prompt} [/INST]"
 
     instances = {
         "inputs": inputs,
         "parameters": {
-            "max_new_tokens":256,
+            "max_new_tokens":248,
             "top_p":0.9,
             "temperature":0.7
             }
         }
 
-    predict_custom_trained_model_sample(
-        project="197636990935",
-        endpoint_id="3886296416141705216",
-        location="us-central1",
-        instances=instances
-    )
+    # predict_custom_trained_model_sample(
+    #     project="197636990935",
+    #     endpoint_id="3886296416141705216",
+    #     location="us-central1",
+    #     instances=instances
+    # )
 
     ####### Running model and prompt
     #token='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'
