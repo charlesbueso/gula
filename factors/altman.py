@@ -41,6 +41,8 @@ from google.cloud import aiplatform
 from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Value
 from typing import Dict, List, Union
+import vertexai
+from vertexai.preview.generative_models import GenerativeModel, Image
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -627,13 +629,14 @@ def prompt_cache(ticker, n_weeks):
     datestamp_dir = os.path.join(ticker_dir, datestamp)
     file_path = os.path.join(datestamp_dir, f"{str(n_weeks)}_prompt.txt")
 
-    # Use existing prompt if it exists
+    # Use prompt if it already exists
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
             prompt = file.read()
             return prompt
         
     else:
+        # Create new prompt file and save it in database
         curday = get_curday()
         steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
 
@@ -650,42 +653,77 @@ def prompt_cache(ticker, n_weeks):
         save_prompt(ticker=ticker, prompt=prompt, weeks=n_weeks)
         return prompt
 
+def split_prompt(prompt, max_length):
+  """Splits a prompt into chunks that can be passed to the model.
+
+    Args:
+        prompt: The prompt to split.
+        max_length: The maximum length of each chunk.
+
+    Returns:
+        A list of chunks.
+  """
+
+  chunks = [prompt[i:i+max_length] for i in range(0, len(prompt), max_length)]
+  return chunks
+
 
 
 if __name__ == "__main__":
 
-    prompt = prompt_cache(ticker='SBUX', n_weeks=4)
-    print(prompt)
-
-    ######## Creating prompt
-
-    # ticker = "SBUX"
-    # n_weeks = 1
-    # curday = get_curday()
-    # steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
-
-    # data = get_stock_data(ticker, steps)
-
-    # data = get_news(ticker, data)
-
-    # data['Basics'] = [json.dumps({})] * len(data)
-    # # data = get_basics(ticker, data, always=True)
-
-    # info, prompt = get_all_prompts_online(ticker, data, curday, True)
-
-    # print(prompt)
-    # save_prompt(ticker=ticker, prompt=prompt, weeks=n_weeks)
+    prompt = prompt_cache(ticker='SBUX', n_weeks=1)
+    print(len(prompt))
 
     # prompt = "What is a stock?"
     
     inputs = f"<s>[INST] <<SYS>> {SYSTEM_PROMPT} <</SYS>> {prompt} [/INST]"
 
+    # Initialize the tokenizer
+    # tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-chat-hf')
+    # tokenizer.padding_side = "right"
+    # tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    # inputs = tokenizer(
+    #     prompt, return_tensors='pt',
+    #     padding=False, max_length=4096
+    # )
+
+    inputs1 = """[Company Introduction]:
+
+                Starbucks Corp is a leading entity in the Hotels, Restaurants & Leisure sector. 
+                Incorporated and publicly traded since 1992-06-26, the company has established its reputation 
+                as one of the key players in the market. As of today, Starbucks Corp has a market capitalization 
+                of 82811.69 in USD, with 1132.20 shares outstanding.Starbucks Corp operates primarily in the US,
+                trading under the ticker SBUX on the NASDAQ NMS - GLOBAL MARKET. As a dominant force in the Hotels, 
+                Restaurants & Leisure space, the company continues to innovate and drive progress within the industry. 
+                From 2024-04-29 to 2024-05-03, SBUX's stock price decreased from 88.33 to 73.11.
+
+                Some recent basic financials of SBUX, reported at 2024-03-31, are presented below:
+
+                [Basic Financials]:
+
+                assetTurnoverTTM: 1.2519
+                cashRatio: 0.36713198475208864
+                currentRatio: 0.8587
+                ebitPerShare: 0.9679
+                eps: 0.6803
+                ev: 116455.76
+
+                Based on all the information before 2024-05-04, let's first analyze the positive developments and 
+                potential concerns for SBUX. Come up with 2-4 most important factors respectively and keep them concise. 
+                Most factors should be inferred from company related news. Then make your prediction of the SBUX stock 
+                price movement for next week (2024-05-04 to 2024-05-11). Provide a summary analysis to support your prediction.
+        """
+    print(len(inputs1))
+
+
+
     instances = {
-        "inputs": inputs,
+        "inputs": inputs1,
         "parameters": {
-            "max_new_tokens":248,
+            "max_new_tokens":512,
             "top_p":0.9,
-            "temperature":0.7
+            "temperature":0.3
             }
         }
 
@@ -695,6 +733,26 @@ if __name__ == "__main__":
     #     location="us-central1",
     #     instances=instances
     # )
+
+    PROJECT_ID = "197636990935"
+    REGION = "us-central1"
+    vertexai.init(project=PROJECT_ID, location=REGION)
+
+    gemini_pro_model = GenerativeModel("gemini-1.0-pro")
+    model_response = gemini_pro_model.generate_content(prompt)
+    print("Gemini 1.0 pro response:\n",model_response)
+
+    # Example usage
+    # chunks = split_prompt(prompt, 1646)
+
+    # # Print the chunks
+    # for chunk in chunks:
+    #     print(chunk)
+    #     print("\n\n---------------------------------------------------\n\n")
+
+
+
+
 
     ####### Running model and prompt
     #token='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'
