@@ -1,4 +1,4 @@
-# 📈 Stock Trading Bot with LLMs and Economic Insights 📈 
+# 📈 Stock Trading Bot with LLMs and Economic Insights
 Welcome to the frontier of quantitative investing! This project delves into the exciting world of building a stock trading bot using cutting-edge Natural Language Processing (NLP) techniques and valuable economic data.
 
 ## Ingredients

@@ -34,6 +34,7 @@ from datetime import date, datetime, timedelta
 from collections import defaultdict
 from datasets import Dataset
 from openai import OpenAI
+from huggingface_hub import login
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -62,6 +63,8 @@ finnhub_client = finnhub.Client(api_key="coi23a9r01qpcmnipei0coi23a9r01qpcmnipei
 client = OpenAI(api_key = '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')
 
 os.environ['CUDA_VISIBLE_DEVICES'] = "5,6"
+
+# login()
 
 
 
@@ -527,18 +530,39 @@ def get_all_prompts_online(symbol, data, curday, with_basics=True):
     return info, prompt
 
 
+def construct_prompt(ticker, curday, n_weeks, use_basics):
+
+    try:
+        steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
+    except Exception:
+        raise print(f"Invalid date {curday}!")
+        
+    data = get_stock_data(ticker, steps)
+    data = get_news(ticker, data)
+    data['Basics'] = [json.dumps({})] * len(data)
+    # print(data)
+    
+    info, prompt = get_all_prompts_online(ticker, data, curday, use_basics)
+    
+    prompt = B_INST + B_SYS + SYSTEM_PROMPT + E_SYS + prompt + E_INST
+    # print(prompt)
+    
+    return info, prompt
+
+
 def test_demo(model, tokenizer, prompt):
 
     inputs = tokenizer(
         prompt, return_tensors='pt',
-        padding=False, max_length=4096
+        padding=False, max_length=4096,
+        truncation=True
     )
     inputs = {key: value.to(model.device) for key, value in inputs.items()}
         
     res = model.generate(
         **inputs, max_length=4096, do_sample=True,
         eos_token_id=tokenizer.eos_token_id,
-        use_cache=True
+        use_cache=True 
     )
     output = tokenizer.decode(res[0], skip_special_tokens=True)
     return output
@@ -547,36 +571,81 @@ def test_demo(model, tokenizer, prompt):
 
 if __name__ == "__main__":
 
+    ######## Creating prompt
 
-    ticker = "SNOW"
-    n_weeks = 4
-    curday = get_curday()
-    steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
+    # ticker = "SNOW"
+    # n_weeks = 4
+    # curday = get_curday()
+    # steps = [n_weeks_before(curday, n) for n in range(n_weeks + 1)][::-1]
 
-    data = get_stock_data(ticker, steps)
+    # data = get_stock_data(ticker, steps)
 
-    data = get_news(ticker, data)
+    # data = get_news(ticker, data)
 
-    data['Basics'] = [json.dumps({})] * len(data)
-    # data = get_basics(ticker, data, always=True)
+    # data['Basics'] = [json.dumps({})] * len(data)
+    # # data = get_basics(ticker, data, always=True)
 
-    info, prompt = get_all_prompts_online(ticker, data, curday, True)
+    # info, prompt = get_all_prompts_online(ticker, data, curday, True)
 
-    print(prompt)
+    # print(prompt)
 
-    ######## Running prompt
+    prompt = "What is a stock?"
+
+    ####### Running model and prompt
+
+    # print("Cuda available: ", torch.cuda.is_available())
+    # # print("Device name:", torch.cuda.get_device_name())
+    # print(torch.backends.cudnn.enabled)
+    # # Step 2: Check Tensorflow
+    # import tensorflow as tf
+    # from tensorflow.python.client import device_lib
+    # print(device_lib.list_local_devices())
+
+    # # torch.zeros(1).cuda()
+
+    # print(tf.config.list_physical_devices('GPU'))
+    # print(tf.test.gpu_device_name())
+
+    # import sys
+    # import pandas as pd
+    # import tensorflow as tf
+    # import torch
+
+    # print(f"Torch Version: {torch.version}")
+    # print(f"Torch GPU: {torch.cuda.is_available()}")
+    # # print(f"Torch GPU Name: {torch.cuda.get_device_name()}")
+    # print(f"Tensor Flow Version: {tf.version}")
+    # gpu = len(tf.config.list_physical_devices('GPU'))>0
+    # print("GPU is", "available" if gpu else "NOT AVAILABLE")
+
+    # print(tf.test.is_built_with_cuda())
+
+    # exit()
 
     base_model = AutoModelForCausalLM.from_pretrained(
-        'meta-llama/Llama-2-7b-chat-hf',
-        trust_remote_code=True,
-        device_map="auto",
-        torch_dtype=torch.float16,   
-        )
+    'meta-llama/Llama-2-7b-chat-hf',
+    token='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',
+    trust_remote_code=True
+    # device_map="auto"
+    # torch_dtype=torch.float16,   
+    )
     base_model.model_parellal = True
 
-    model = PeftModel.from_pretrained(base_model, 'FinGPT/fingpt-forecaster_dow30_llama2-7b_lora')
+    # Generate a unique directory name to avoid conflicts
+    offload_dir = f"/tmp/peft_offload_{int(time.time())}"
+    os.makedirs(offload_dir, exist_ok=True)  # Create directory if it doesn't exist
+
+    model = PeftModel.from_pretrained(
+            base_model, 
+            'FinGPT/fingpt-forecaster_dow30_llama2-7b_lora', 
+            offload_folder=offload_dir
+            )
     model = model.eval()
-    tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-chat-hf')
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        'meta-llama/Llama-2-7b-chat-hf',
+        token='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',
+        )
     tokenizer.padding_side = "right"
     tokenizer.pad_token_id = tokenizer.eos_token_id
     
@@ -586,7 +655,7 @@ if __name__ == "__main__":
 
     for i in range(len(test_dataset)):
         prompt = test_dataset[i]
-        output = test_demo(model, tokenizer, prompt)
+        output = test_demo(base_model, tokenizer, prompt)
         answer = re.sub(r'.*\[/INST\]\s*', '', output, flags=re.DOTALL)
         # gt = test_dataset[i]['answer']
         print('\n------- Prompt ------\n')

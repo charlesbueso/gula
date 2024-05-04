@@ -14,6 +14,7 @@ venv/
 .venv/
 env/
 .env/
+venv310/
 
 # IDE specific files
 .vscode/
@@ -23,3 +24,6 @@ env/
 *.log
 *.swp
 .DS_Store
+
+# Docs
+docs/
