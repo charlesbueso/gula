@@ -36,6 +36,12 @@ from datasets import Dataset
 from openai import OpenAI
 from huggingface_hub import login
 
+from google.cloud import aiplatform
+from google.cloud import aiplatform
+from google.protobuf import json_format
+from google.protobuf.struct_pb2 import Value
+from typing import Dict, List, Union
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -549,23 +555,42 @@ def construct_prompt(ticker, curday, n_weeks, use_basics):
     
     return info, prompt
 
-
-def test_demo(model, tokenizer, prompt):
-
-    inputs = tokenizer(
-        prompt, return_tensors='pt',
-        padding=False, max_length=4096,
-        truncation=True
+def predict_custom_trained_model_sample(
+    project: str,
+    endpoint_id: str,
+    instances: Union[Dict, List[Dict]],
+    location: str = "us-central1",
+    api_endpoint: str = "us-central1-aiplatform.googleapis.com",
+):
+    """
+    `instances` can be either single instance of type dict or a list
+    of instances.
+    """
+    # The AI Platform services require regional API endpoints.
+    client_options = {"api_endpoint": api_endpoint}
+    # Initialize client that will be used to create and send requests.
+    # This client only needs to be created once, and can be reused for multiple requests.
+    client = aiplatform.gapic.PredictionServiceClient(client_options=client_options)
+    # The format of each instance should conform to the deployed model's prediction input schema.
+    instances = instances if isinstance(instances, list) else [instances]
+    instances = [
+        json_format.ParseDict(instance_dict, Value()) for instance_dict in instances
+    ]
+    parameters_dict = {}
+    parameters = json_format.ParseDict(parameters_dict, Value())
+    endpoint = client.endpoint_path(
+        project=project, location=location, endpoint=endpoint_id
     )
-    inputs = {key: value.to(model.device) for key, value in inputs.items()}
-        
-    res = model.generate(
-        **inputs, max_length=4096, do_sample=True,
-        eos_token_id=tokenizer.eos_token_id,
-        use_cache=True 
+    response = client.predict(
+        endpoint=endpoint, instances=instances, parameters=parameters
     )
-    output = tokenizer.decode(res[0], skip_special_tokens=True)
-    return output
+    print("response")
+    print(" deployed_model_id:", response.deployed_model_id)
+    # The predictions are a google.protobuf.Value representation of the model's predictions.
+    predictions = response.predictions
+    # for prediction in predictions:
+    #     print(" prediction:", dict(prediction))
+    print(predictions)
 
 
 
@@ -590,102 +615,24 @@ if __name__ == "__main__":
     # print(prompt)
 
     prompt = "What is a stock?"
+    
+    inputs = f"<s>[INST] <<SYS>> {SYSTEM_PROMPT} <</SYS>> {prompt} [/INST]"
+
+    instances = {
+        "inputs": inputs,
+        "parameters": {
+            "max_new_tokens":256,
+            "top_p":0.9,
+            "temperature":0.7
+            }
+        }
+
+    predict_custom_trained_model_sample(
+        project="197636990935",
+        endpoint_id="3886296416141705216",
+        location="us-central1",
+        instances=instances
+    )
 
     ####### Running model and prompt
-
-    # print("Cuda available: ", torch.cuda.is_available())
-    # # print("Device name:", torch.cuda.get_device_name())
-    # print(torch.backends.cudnn.enabled)
-    # # Step 2: Check Tensorflow
-    # import tensorflow as tf
-    # from tensorflow.python.client import device_lib
-    # print(device_lib.list_local_devices())
-
-    # # torch.zeros(1).cuda()
-
-    # print(tf.config.list_physical_devices('GPU'))
-    # print(tf.test.gpu_device_name())
-
-    # import sys
-    # import pandas as pd
-    # import tensorflow as tf
-    # import torch
-
-    # print(f"Torch Version: {torch.version}")
-    # print(f"Torch GPU: {torch.cuda.is_available()}")
-    # # print(f"Torch GPU Name: {torch.cuda.get_device_name()}")
-    # print(f"Tensor Flow Version: {tf.version}")
-    # gpu = len(tf.config.list_physical_devices('GPU'))>0
-    # print("GPU is", "available" if gpu else "NOT AVAILABLE")
-
-    # print(tf.test.is_built_with_cuda())
-
-    # exit()
-
-    base_model = AutoModelForCausalLM.from_pretrained(
-    'meta-llama/Llama-2-7b-chat-hf',
-    token='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',
-    trust_remote_code=True
-    # device_map="auto"
-    # torch_dtype=torch.float16,   
-    )
-    base_model.model_parellal = True
-
-    # Generate a unique directory name to avoid conflicts
-    offload_dir = f"/tmp/peft_offload_{int(time.time())}"
-    os.makedirs(offload_dir, exist_ok=True)  # Create directory if it doesn't exist
-
-    model = PeftModel.from_pretrained(
-            base_model, 
-            'FinGPT/fingpt-forecaster_dow30_llama2-7b_lora', 
-            offload_folder=offload_dir
-            )
-    model = model.eval()
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        'meta-llama/Llama-2-7b-chat-hf',
-        token='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',
-        )
-    tokenizer.padding_side = "right"
-    tokenizer.pad_token_id = tokenizer.eos_token_id
-    
-    test_dataset = [prompt]
-
-    answers = []
-
-    for i in range(len(test_dataset)):
-        prompt = test_dataset[i]
-        output = test_demo(base_model, tokenizer, prompt)
-        answer = re.sub(r'.*\[/INST\]\s*', '', output, flags=re.DOTALL)
-        # gt = test_dataset[i]['answer']
-        print('\n------- Prompt ------\n')
-        print(prompt)
-        print('\n------- LLaMA2 Finetuned ------\n')
-        print(answer)
-        # print('\n------- GPT4 Groundtruth ------\n')
-        # print(gt)
-        print('\n===============\n')
-        answers.append(answer)
-        # gts.append(gt)
-
-
-
-    # tickers = [ticker]
-    # query_gpt4(model="gpt-4-turbo", symbol_list=tickers, min_past_weeks=1, max_past_weeks=3, with_basics=True)
-
-    # DOW_30 = ["SNOW"]
-
-    # for symbol in DOW_30:
-    #     prepare_data_for_company(symbol)
-
-    # prompts = get_all_prompts("AAPL", 1, 3)
-    # prompts = get_all_prompts("MSFT", 1, 3, False)
-
-    # prompts = get_all_prompts("SNOW", 1, 4)
-    # print(prompts[0])
-
-    # query_gpt4("gpt-3.5-turbo", DOW_30, 1, 4)
-
-    # dow30_v3_dataset = create_dataset(DOW_30, 0.9)
-    # dow30_v3_dataset.save_to_disk('fingpt-forecaster-dow30v3-20221231-20230531-llama')
-    # print(dow30_v3_dataset)
+    #token='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'
