@@ -33,11 +33,15 @@ import logging
 import json
 import numpy as np
 
+from statsmodels.tsa.vector_ar.var_model import VAR
+import matplotlib.pyplot as plt
+
 DATABASE_DIR = r"C:/Users/papia/OneDrive/Databases/FRED"
 
 LOGGER = logging.getLogger(__name__)
 
 today = datetime.date.today()
+
 
 def main():
     """
@@ -58,7 +62,6 @@ def main():
     # You need to register for an API key at the FRED website
     fred = Fred(api_key='4c3e5d4494e935f26c612cca3b83e4ff')
 
-    # Define the series IDs for the indicators
     # You can find these IDs on the FRED website
     series_ids = {
         'Real Gross Domestic Product (GDP)': 'GDPC1',
@@ -100,7 +103,7 @@ def kennedy_weight(data, weights):
     """
     for column in data.select_dtypes(include=[np.number]).columns:
         data[column] = (data[column] - data[column].mean()) / data[column].std()
-        
+
 
 
     # Normalize each variable between -1 and 1 based on typical economic ranges
@@ -147,6 +150,48 @@ def zscore_normalization(data, rolling_window=None):
         data.to_csv(f"{DATABASE_DIR}/{str(today)}/zscore_indicators_{str(rolling_window)}_days.csv", index=False)
         return data
 
+def farooqi_weight(data_file, weights):
+  """
+  Calculates a weighted influence value on a target variable.
+
+  Args:
+      data_file (str): Path to the CSV file containing economic data.
+      weights (dict): Dictionary containing weights for each variable.
+
+  Returns:
+      float: Weighted influence value.
+  """
+
+  df = pd.read_csv(data_file)
+  latest_data = df.iloc[-1]
+
+  weighted_sum = np.sum(latest_data * weights.values())
+
+  return weighted_sum
+
+
+def train_test_split(df, training_percentage=0.75):
+    """
+    Splits a time series DataFrame into training and test sets.
+
+    Parameters:
+    df (pandas.DataFrame): The DataFrame to split.
+    training_percentage (float): The percentage of data to use for training. Must be between 0 and 1.
+
+    Returns:
+    pandas.DataFrame, pandas.DataFrame: The training and test sets.
+    """
+    # Calculate the number of rows to use for training
+    train_size = int(len(df) * training_percentage)
+
+    # Split the DataFrame
+    train = df.iloc[:train_size]
+    test = df.iloc[train_size:]
+
+    return train, test
+
+
+
 
 if __name__ == '__main__':
     fred_historical, fred_latest = main()
@@ -175,20 +220,78 @@ if __name__ == '__main__':
     # df = min_max_normalization(fred_historical)
     # print(df)
 
-    df = zscore_normalization(fred_historical, rolling_window=23) #around 5 years of data
+    # df = zscore_normalization(fred_historical, rolling_window=23) #around 5 years of data
+    # farooqi_weight = farooqi_weight(f"{DATABASE_DIR}/{str(today)}/zscore_indicators_23_days.csv", weights)
+    # print("Farooqi: ---------------------------",)
 
     # Calculate the Kennedy factor
-    kennedy_weight = kennedy_weight(df, weights)
-    print("Kennedy Factor: ---------------------------", str(kennedy_weight))
+    # kennedy_weight = kennedy_weight(df, weights)
+    # print("Farooqi Factor: ---------------------------", str(kennedy_weight))
+
+    # VAR model
+    # Convert all columns to numeric, errors='coerce' will set non-numeric values to NaN
+    fred_historical = fred_historical.apply(pd.to_numeric, errors='coerce')
+    print(fred_historical.shape)
+
+    # Interpolate by column to fill missing values with the mean of the column
+    # Mean interpolation
+    df_mean = fred_historical.fillna(fred_historical.mean())
+    # Remove first two colums of df_mean
+    df_mean = df_mean.iloc[:, 2:]
+
+    print(df_mean.head())
+
+    # Split data
+    train, test = train_test_split(df_mean, 0.86)
+
+    # Fit the model
+    model = VAR(train)
+    results = model.fit()
+
+    # Make forecast
+    lag_order = results.k_ar
+    forecast = results.forecast(test.values[-lag_order:], 5)  # Forecast 5 steps ahead
+    results.plot_forecast(10)
+    plt.show()
+    exit()
+    # print(forecast)
+    # Convert forecast to DataFrame for easier plotting
+    forecast_df = pd.DataFrame(forecast, columns=df_mean.columns)
+
+    # Plot all graphs 
+    # for column in forecast_df.columns:
+    #     plt.figure(figsize=(12, 6))
+    #     plt.plot(forecast_df[column])
+    #     plt.title(f'5-step ahead forecast for {column}')
+    #     plt.show()
+
+    # Determine the number of rows and columns for the subplots
+    n = len(forecast_df.columns)
+    ncols = 2
+    nrows = n // ncols if n % ncols == 0 else n // ncols + 1
+
+    # Create a new figure with subplots
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 6 * nrows))
+
+    # Flatten the axes array
+    axes = axes.flatten()
+
+    # Plot each column
+    for i, column in enumerate(forecast_df.columns):
+        axes[i].plot(forecast_df[column])
+        axes[i].set_title(f'5-step ahead forecast for {column}')
+
+    # Remove unused subplots
+    if n % ncols != 0:
+        for j in range(i+1, nrows*ncols):
+            fig.delaxes(axes[j])
+
+    # Display the plot
+    plt.tight_layout()
+    plt.show()
+
     exit()
 
-    if kennedy_weight > 0:
-        print(f"Economic Sentiment Index: {kennedy_weight:.2f} (Bullish)")
-    elif kennedy_weight < 0:
-        print(f"Economic Sentiment Index: {kennedy_weight:.2f} (Bearish)")
-    else:
-        print(f"Economic Sentiment Index: {kennedy_weight:.2f} (Neutral)")
-    
             # Positive:
             # Economic (higher)
             # 1. Real Gross Domestic Product (GDP)
