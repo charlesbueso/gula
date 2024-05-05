@@ -195,11 +195,6 @@ def update_database(pickle_dir, senator_txs_old):
     # Convert tx_date column to datetime
     senator_txs_old['file_date'] = pd.to_datetime(senator_txs_old['file_date'], format='%m/%d/%Y', errors='coerce')
 
-    # nat_values = senator_txs_old['file_date'].isna()
-    # if nat_values.any():
-    #     print("Found NaT values in the tx_date column:")
-    #     print(senator_txs_old[nat_values])
-
     latest_date = senator_txs_old['file_date'].max()
     days_padding = 5
 

@@ -34,6 +34,7 @@ import json
 import numpy as np
 
 from statsmodels.tsa.vector_ar.var_model import VAR
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
 
 DATABASE_DIR = r"C:/Users/papia/OneDrive/Databases/FRED"
@@ -94,61 +95,6 @@ def main():
     data.to_csv(f"{DATABASE_DIR}/{str(today)}/economic_indicators.csv")
     return data, latest
 
-def kennedy_weight(data, weights):
-    """
-        Takes in multiple time series normalized by z-score in data
-        It also takes weights for each variable in the data
-        Returns the Kennedy Factor as a weighted sum of the normalized values
-        Between -1 and 1
-    """
-    for column in data.select_dtypes(include=[np.number]).columns:
-        data[column] = (data[column] - data[column].mean()) / data[column].std()
-
-
-
-    # Normalize each variable between -1 and 1 based on typical economic ranges
-    # normalized_data = {key: (value - np.mean(value)) / np.std(value) for key, value in data.items()}
-    # Calculate the weighted sum of normalized values
-    # sentiment_index = sum([data[key] * weights[key] for key in weights])
-
-    # return sentiment_index
-
-
-def min_max_normalization(data):
-    """
-        Normalize the data using min-max normalization
-        The data takes every column after index and normalizes it between 0 and 1
-    """
-    for column in data.select_dtypes(include=[np.number]).columns:
-        data[column] = (data[column] - data[column].min()) / (data[column].max() - data[column].min())
-
-    # Save the normalized data to a csv file in the same directory
-    data.to_csv(f"{DATABASE_DIR}/{str(today)}/minmax_indicators.csv", index=False)
-
-    return data
-
-def zscore_normalization(data, rolling_window=None):
-    """
-        Normalize the data using z-score normalization
-        The data takes every column after index and normalizes it between -1 and 1
-        Rolling windows chooses last x days to calculate the mean and standard deviation
-    """
-    if rolling_window is None:
-        for column in data.select_dtypes(include=[np.number]).columns:
-            data[column] = (data[column] - data[column].mean()) / data[column].std()
-
-        # Save the normalized data to a csv file in the same directory
-        data.to_csv(f"{DATABASE_DIR}/{str(today)}/zscore_indicators.csv", index=False)
-        return data
-    
-    else:
-        # Take latest dates (column ) in data df
-        data = data.tail(rolling_window).copy()
-        for column in data.select_dtypes(include=[np.number]).columns:
-            data[column] = (data[column] - data[column].mean()) / data[column].std()
-
-        data.to_csv(f"{DATABASE_DIR}/{str(today)}/zscore_indicators_{str(rolling_window)}_days.csv", index=False)
-        return data
 
 def farooqi_weight(data_file, weights):
   """
@@ -190,15 +136,180 @@ def train_test_split(df, training_percentage=0.75):
 
     return train, test
 
+def make_VAR_predictions(fred_historical, plot=True, save=True):
+    """
+    Visualizes the predictions made by the model.
+    """
+    # Convert all columns to numeric, errors='coerce' will set non-numeric values to NaN
+    fred_historical = fred_historical.apply(pd.to_numeric, errors='coerce')
+
+    # Mean interpolation
+    df_mean = fred_historical.fillna(fred_historical.mean())
+
+    # Remove first column of df_mean
+    df_mean = df_mean.iloc[:, 1:]
+
+    # Split data
+    train, test = train_test_split(df_mean, 0.86)
+
+    # Fit the model
+    model = VAR(train)
+    results = model.fit()
+
+    # Make forecast
+    lag_order = results.k_ar
+    forecast = results.forecast(train.values[-lag_order:], len(test))  # Forecast 5 steps ahead, now in len(test)
+    # results.plot_forecast(15)
+    # plt.show()
+
+    predictions = pd.DataFrame({'Forecasted Real Gross Domestic Product (GDP)': forecast[:, 0],
+                                'Real Gross Domestic Product (GDP)': test['Real Gross Domestic Product (GDP)'].values,
+                                'Forecasted Industrial Production': forecast[:, 1],
+                                'Industrial Production': test['Industrial Production'].values,
+                                'Forecasted Nonfarm Payrolls': forecast[:, 2],
+                                'Nonfarm Payrolls': test['Nonfarm Payrolls'].values,
+                                'Forecasted Unemployment Rate': forecast[:, 3],
+                                'Unemployment Rate': test['Unemployment Rate'].values,
+                                'Forecasted Consumer Price Index (CPI)': forecast[:, 4],
+                                'Consumer Price Index (CPI)': test['Consumer Price Index (CPI)'].values,
+                                'Forecasted Producer Price Index (PPI)': forecast[:, 5],
+                                'Producer Price Index (PPI)': test['Producer Price Index (PPI)'].values,
+                                'Forecasted Federal Funds Rate': forecast[:, 6],
+                                'Federal Funds Rate': test['Federal Funds Rate'].values,
+                                'Forecasted Treasury Yields': forecast[:, 7],
+                                'Treasury Yields': test['Treasury Yields'].values
+                                })
+    
+    print(predictions)
+    if save: predictions.to_csv(f"{DATABASE_DIR}/{str(today)}/farooqi_predictions.csv", index=False)
+
+    if plot:
+        # Assuming df is your DataFrame
+        variables = ['Real Gross Domestic Product (GDP)', 'Industrial Production', 'Nonfarm Payrolls', 'Unemployment Rate', 
+                     'Consumer Price Index (CPI)', 'Producer Price Index (PPI)', 'Federal Funds Rate', 'Treasury Yields']
+
+        # Create a new figure with subplots
+        fig, axes = plt.subplots(nrows=len(variables), figsize=(12, 6 * len(variables)))
+
+        # Plot each pair of columns
+        for i, variable in enumerate(variables):
+            forecasted_variable = f'Forecasted {variable}'
+            axes[i].plot(predictions[forecasted_variable], label=forecasted_variable)
+            axes[i].plot(predictions[variable], label=variable)
+            axes[i].legend()
+            axes[i].set_title(f'{variable} vs Forecasted {variable}')
+
+        # Display the plot
+        plt.tight_layout()
+        plt.show()
+
+    return predictions
+
+def var_accuracy(predictions, fred_latest):
+    """
+    Calculates the accuracy of the predictions made by the VAR model.
+
+    Parameters:
+    predictions (pandas.DataFrame): A DataFrame containing the actual and forecasted values.
+
+    Returns:
+    float: The mean absolute percentage error of the predictions.
+    """
+    # Assuming df is your DataFrame
+    variables = ['Real Gross Domestic Product (GDP)', 'Industrial Production', 'Nonfarm Payrolls', 'Unemployment Rate', 'Consumer Price Index (CPI)', 'Producer Price Index (PPI)', 'Federal Funds Rate', 'Treasury Yields']
+    accuracy = {}
+
+    print("""Mean Squared Error (MSE):
+        Thinks about how far off your guesses are from the actual heights, in terms of distance squared.
+        Larger the square of the distance (bigger guess difference), the more it penalizes your prediction.
+        Like this: Imagine you guess someone is 5 feet tall, but they're actually 6 feet tall. The difference 
+        is 1 foot. But MSE squares that difference (1 squared = 1), so it contributes more to the overall error.
+          """)
+    
+    print("""Mean Absolute Error (MAE):
+          Just cares about how far off your guesses are, regardless of direction (over or underestimation).
+          It simply takes the absolute value (distance without considering positive or negative) of the difference between 
+          your guess and the actual height. So, in the same example (guessing 5 feet for a 6 feet tall friend), 
+          MAE would just consider the difference as 1 foot (absolute value of 1).\n""")
+
+    # Calculate the MSE and MAE for each pair of columns
+    for variable in variables:
+        forecasted_variable = f'Forecasted {variable}'
+        mse = mean_squared_error(predictions[variable], predictions[forecasted_variable])
+        mae = mean_absolute_error(predictions[variable], predictions[forecasted_variable])
+        accuracy[variable] = {'MSE': mse, 'MAE': mae}
+        print(f'{variable}: MSE = {mse}, MAE = {mae}')
+
+    # TODO: Calculate the mean absolute percentage error
+
+    return accuracy
+
+def normalization(type='zscore', save=True, data=None, rolling_window=None):
+    """
+    Normalize the economic data using:
+    1. Min-Max Normalization on each time series (minmax)
+    2. Z-Score Normalization on each time series (zscore)
+    
+    Saves file by default to DATABASE_DIR/today/ as minmax_indicators.csv or zscore_indicators.csv
+    
+    """
+    if type == 'minmax':
+        for column in data.select_dtypes(include=[np.number]).columns:
+            data[column] = (data[column] - data[column].min()) / (data[column].max() - data[column].min())
+
+        if save: data.to_csv(f"{DATABASE_DIR}/{str(today)}/minmax_indicators.csv", index=False)
+        return data
+    
+    elif type == 'zscore':
+        if rolling_window is None:
+            for column in data.select_dtypes(include=[np.number]).columns:
+                data[column] = (data[column] - data[column].mean()) / data[column].std()
+
+            if save: data.to_csv(f"{DATABASE_DIR}/{str(today)}/zscore_indicators.csv", index=False)
+            return data
+        
+        else:
+            # Take latest dates (column) in df by rolling window param
+            data = data.tail(rolling_window).copy()
+            for column in data.select_dtypes(include=[np.number]).columns:
+                data[column] = (data[column] - data[column].mean()) / data[column].std()
+
+            if save: data.to_csv(f"{DATABASE_DIR}/{str(today)}/zscore_indicators_{str(rolling_window)}_days.csv", index=False)
+            return data        
+
 
 
 
 if __name__ == '__main__':
+    """
+    Resilient Macro-portfolio
+    Positive:
+        Economic (higher)
+        1. Real Gross Domestic Product (GDP)
+        2. Industrial Production
+
+        Employment (higher)
+        3. Nonfarm Payrolls
+        4. Unemployment Rate
+        
+        Inflation (moderate, set a>=x>=b):
+        5. Consumer Price Index (CPI)
+        6. Producer Price Index (PPI)
+
+        Interest rates (lower):
+        7. Federal Funds Rate
+        8. Treasury Yields
+    """
+
     fred_historical, fred_latest = main()
-    # print(fred_historical.head())
-    # print(fred_latest)
-    
-    # Assign weights to each variable based on importance
+
+    # Run VAR model prediction on fred historical data
+    predictions = make_VAR_predictions(fred_historical, plot=False, save=False)
+    accuracy = var_accuracy(predictions, fred_latest)
+    print('\n') 
+    print(fred_latest)
+
+    # TODO: Assign weights to each variable based on importance
     weights = {
         "Real Gross Domestic Product (GDP)": 0.25,
         "Industrial Production": 0.15,
@@ -210,98 +321,11 @@ if __name__ == '__main__':
         "Treasury Yields": 0.15
     }
 
-    # Remove latest date from dictionary
+    # Remove latest date from fred_latest (leave col and value only)
     clean_data = {key: value[1] for key, value in fred_latest.items()}
     data = pd.DataFrame(clean_data, index=[0])
-    # print(data)
-    # exit()
-
-    # Min-Max Normalization
-    # df = min_max_normalization(fred_historical)
-    # print(df)
-
-    # df = zscore_normalization(fred_historical, rolling_window=23) #around 5 years of data
-    # farooqi_weight = farooqi_weight(f"{DATABASE_DIR}/{str(today)}/zscore_indicators_23_days.csv", weights)
-    # print("Farooqi: ---------------------------",)
-
-    # Calculate the Kennedy factor
-    # kennedy_weight = kennedy_weight(df, weights)
-    # print("Farooqi Factor: ---------------------------", str(kennedy_weight))
-
-    # VAR model
-    # Convert all columns to numeric, errors='coerce' will set non-numeric values to NaN
-    fred_historical = fred_historical.apply(pd.to_numeric, errors='coerce')
-    print(fred_historical.shape)
-
-    # Interpolate by column to fill missing values with the mean of the column
-    # Mean interpolation
-    df_mean = fred_historical.fillna(fred_historical.mean())
-    # Remove first two colums of df_mean
-    df_mean = df_mean.iloc[:, 2:]
-
-    print(df_mean.head())
-
-    # Split data
-    train, test = train_test_split(df_mean, 0.86)
-
-    # Fit the model
-    model = VAR(train)
-    results = model.fit()
-
-    # Make forecast
-    lag_order = results.k_ar
-    forecast = results.forecast(test.values[-lag_order:], 5)  # Forecast 5 steps ahead
-    results.plot_forecast(10)
-    plt.show()
-    exit()
-    # print(forecast)
-    # Convert forecast to DataFrame for easier plotting
-    forecast_df = pd.DataFrame(forecast, columns=df_mean.columns)
-
-    # Plot all graphs 
-    # for column in forecast_df.columns:
-    #     plt.figure(figsize=(12, 6))
-    #     plt.plot(forecast_df[column])
-    #     plt.title(f'5-step ahead forecast for {column}')
-    #     plt.show()
-
-    # Determine the number of rows and columns for the subplots
-    n = len(forecast_df.columns)
-    ncols = 2
-    nrows = n // ncols if n % ncols == 0 else n // ncols + 1
-
-    # Create a new figure with subplots
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 6 * nrows))
-
-    # Flatten the axes array
-    axes = axes.flatten()
-
-    # Plot each column
-    for i, column in enumerate(forecast_df.columns):
-        axes[i].plot(forecast_df[column])
-        axes[i].set_title(f'5-step ahead forecast for {column}')
-
-    # Remove unused subplots
-    if n % ncols != 0:
-        for j in range(i+1, nrows*ncols):
-            fig.delaxes(axes[j])
-
-    # Display the plot
-    plt.tight_layout()
-    plt.show()
+    
+    # Normalize the fred_historical data
+    normalized_data = normalization(type='minmax', data=fred_historical)
 
     exit()
-
-            # Positive:
-            # Economic (higher)
-            # 1. Real Gross Domestic Product (GDP)
-            # 2. Industrial Production
-            # Employment (higher)
-            # 3. Nonfarm Payrolls
-            # 4. Unemployment Rate
-            # Inflation (moderate, set a>=x>=b):
-            # 5. Consumer Price Index (CPI)
-            # 6. Producer Price Index (PPI)
-            # Interest rates (lower):
-            # 7. Federal Funds Rate
-            # 8. Treasury Yields

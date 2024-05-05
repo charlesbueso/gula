@@ -68,7 +68,7 @@ END_DATE = "2024-04-10"
 DATA_DIR = f"./{START_DATE}_{END_DATE}"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-DATABASE_DIR = r"C:\\Users\\papia\\OneDrive\\Databases\\FinGPTPrompts"
+DATABASE_DIR = r"C:/Users/papia/OneDrive/Databases/FinGPTPrompts"
 
 finnhub_client = finnhub.Client(api_key="coi23a9r01qpcmnipei0coi23a9r01qpcmnipeig")
 
@@ -740,7 +740,7 @@ if __name__ == "__main__":
     # model_response = gemini_pro_model.generate_content(prompt)
     # print("Gemini 1.0 pro response:\n",model_response)
 
-    # Claude 3 Sonnet model
+    # Claude 3 Sonnet model in VertexAI (still not able to implement)
     LOCATION="us-central1"
     client = AnthropicVertex(region=LOCATION, project_id="fingpt-422201")
     message = client.messages.create(
